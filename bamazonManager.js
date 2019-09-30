@@ -1,5 +1,5 @@
 var mysql = require("mysql");
-// var inquirer = require("inquirer");
+var inquirer = require("inquirer");
 var connection = mysql.createConnection({
     host: "localhost",
 
@@ -10,58 +10,75 @@ var connection = mysql.createConnection({
     user: "root",
 
     // Your password
-    password: "OneCup0fJava!",
+    password: "****",
     database: "bamazon"
 });
 connection.connect(function(err) {
     if (err) throw err;
-    bamazonOrder();
 });
 
-function runSearch() {
-    inquirer
-        .prompt({
-            name: "action",
-            type: "rawlist",
-            message: "What would you like to do?",
-            choices: [
-                "View all item for sale",
-                "Find all artists who appear more than once",
-                "Find data within a specific range",
-                "Search for a specific song",
-                "Find artists with a top song and top album in the same year"
-            ]
-        })
-        .then(function(answer) {
-            switch (answer.action) {
-                case "Find songs by artist":
-                    artistSearch();
-                    break;
+function displayInventory() {
+    connection.query("select * from products", function(err, response) {
+        console.log("welcome to bamazon");
+        console.log('\n');
+        console.log('Our inventory');
+        console.log('\n');
+        console.table(response)
 
-                case "Find all artists who appear more than once":
-                    multiSearch();
-                    break;
+    })
 
-                case "Find data within a specific range":
-                    rangeSearch();
-                    break;
 
-                case "Search for a specific song":
-                    songSearch();
-                    break;
+}
+displayInventory();
 
-                case "Find artists with a top song and top album in the same year":
-                    songAndAlbumSearch();
-                    break;
+function newOrder() {
+    inquirer.prompt([{
+            name: "id",
+            type: "input",
+            message: "What is the item id for your purchase today?",
+
+        }, {
+            name: "quanitity",
+            type: "input",
+            message: "How many would you like to purchase?",
+
+        }
+
+    ]).then(function(answer) {
+
+        var qanT = answer.quanitity;
+        var itemId = answer.id;
+        connection.query('SELECT * FROM products WHERE ?', [{
+            item_id: itemId
+        }], function(err, response) {
+
+            if (err) throw err;
+            else if (response[0].stock_quantity - qanT >= 0) {
+
+                var totalcost = qanT * response[0].price;
+
+                console.log('We have enough (' + response[0].product_name + ')!');
+                console.log('Quantity in stock: ' + response[0].stock_quantity + ' Order quantity: ' + qanT);
+                console.log('Please pay the amount of $' + totalcost + '. Thank you!');
+
+                connection.query("UPDATE products SET ? WHERE ?", [{
+                    stock_quantity: response[0].stock_quantity - qanT
+                }, {
+                    item_id: itemId
+                }], function(err, response) {
+                    if (err) throw err;
+
+                    displayInventory();
+                    newOrder();
+
+
+                });
+            } else {
+                console.log('Insufficient quantity.  Please adjust your order, we only have ' + response[0].stock_quantity + ' ' + response[0].product_name + ' in stock.');
+                displayInventory()
             }
         });
+    });
 }
-
-// function bamazonOrder() {
-//     inquirer
-//         .prompt({
-//             name: "",
-//             type:
-
-//         })
-// }
+displayInventory()
+newOrder();
