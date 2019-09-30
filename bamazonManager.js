@@ -10,7 +10,7 @@ var connection = mysql.createConnection({
     user: "root",
 
     // Your password
-    password: "****",
+    password: "OneCup0fJava!",
     database: "bamazon"
 });
 connection.connect(function(err) {
@@ -46,31 +46,29 @@ function newOrder() {
 
     ]).then(function(answer) {
 
-        var qanT = answer.quanitity;
+        var quanity = answer.quanitity;
         var itemId = answer.id;
         connection.query('SELECT * FROM products WHERE ?', [{
             item_id: itemId
         }], function(err, response) {
 
             if (err) throw err;
-            else if (response[0].stock_quantity - qanT >= 0) {
+            else if (response[0].stock_quantity - quanity >= 0) {
 
-                var totalcost = qanT * response[0].price;
+                var totalcost = quanity * response[0].price;
 
                 console.log('We have enough (' + response[0].product_name + ')!');
-                console.log('Quantity in stock: ' + response[0].stock_quantity + ' Order quantity: ' + qanT);
+                console.log('Quantity in stock: ' + response[0].stock_quantity + ' Order quantity: ' + quanity);
                 console.log('Please pay the amount of $' + totalcost + '. Thank you!');
 
                 connection.query("UPDATE products SET ? WHERE ?", [{
-                    stock_quantity: response[0].stock_quantity - qanT
+                    stock_quantity: response[0].stock_quantity - quanity
                 }, {
                     item_id: itemId
                 }], function(err, response) {
-                    if (err) throw err;
 
                     displayInventory();
                     newOrder();
-
 
                 });
             } else {
